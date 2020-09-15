@@ -12,7 +12,6 @@ case class Travel(visited: ListSet[Pos]) {
   def this(visited: Pos*) = this(ListSet.from(visited))
 
   override def toString: String = "[" + visited.map(p => p.toString).mkString(" ") + "]"
-
   //  override def toString: String = visited.zipWithIndex.map { case (p, i) => s"${i + 1}:$p" }.mkString(" ")
 
   val currentPos: Pos = visited.last
@@ -23,13 +22,13 @@ case class Travel(visited: ListSet[Pos]) {
    *
    * Contains all the possible next knight moves, if they reach the squares not yet visited.
    * */
-  val nextMoves: List[Pos] = currentPos.knightMoves.filterNot(move => visited.contains(move))
+  lazy val nextMoves = currentPos.knightMoves.filterNot(move => visited.contains(move))
 
   /** What can be next travels with one more knight move.
    *
    * Contains all the possible correct subsequent knight travels with one more next knight move.
    * */
-  lazy val nextTravels: List[Travel] = nextMoves.map(move => Travel(visited + move))
+  lazy val nextTravels = nextMoves.map(move => Travel(visited + move))
 
   /** From the current travel, try to find the solution to “knight travel” problem recursively.
    *
@@ -44,8 +43,7 @@ case class Travel(visited: ListSet[Pos]) {
       None
     } else {
       // Generate the next travels and depth-search them.
-      LazyList
-        .from(nextTravels)
+      LazyList.from(nextTravels)
         .map(tr => tr.findKnightTravelSolution)
         .find(_.nonEmpty)
         .flatten
