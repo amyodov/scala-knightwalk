@@ -1,5 +1,7 @@
 package com.myodov.knightwalk
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import scala.collection.immutable.ListSet
 
 /** Some particular travel of a knight over the chess board. */
@@ -12,6 +14,8 @@ case class Travel(visited: ListSet[Pos]) {
   def this(visited: Pos*) = this(ListSet.from(visited))
 
   override def toString: String = "[" + visited.map(p => p.toString).mkString(" ") + "]"
+
+  //  override def toString: String = visited.zipWithIndex.map { case (p, i) => s"${i + 1}:$p" }.mkString(" ")
 
   val currentPos: Pos = visited.last
 
@@ -36,16 +40,16 @@ case class Travel(visited: ListSet[Pos]) {
   lazy val findKnightTravelSolution: Option[Travel] = {
     val checkpointSize = 5000000
 
-    Travel.counter += 1
-    val counter = Travel.counter
+    val counter = Travel.counter.incrementAndGet()
+
     if (counter % checkpointSize == 0) {
       val thisTS = System.nanoTime
-      val durationSeconds = (thisTS - Travel.lastTS) / 1_000_000_000.0
-      val tps = checkpointSize / durationSeconds
+      val durationSeconds = (thisTS - Travel.startTS) / 1_000_000_000.0
+      val tps = counter / durationSeconds
 
       println(f"$counter; $tps%.0f TPS")
-      Travel.lastTS = thisTS
     }
+
     if (visitedAllBoard) {
       // Solution found in this branch of travels!
       Some(this)
@@ -54,8 +58,11 @@ case class Travel(visited: ListSet[Pos]) {
       None
     } else {
       // Generate the next travels and depth-search them.
-      val nextSolutions: List[Option[Travel]] = nextTravels.map(tr => tr.findKnightTravelSolution)
-      nextSolutions.find(_.nonEmpty).flatten
+      LazyList
+        .from(nextTravels)
+        .map(tr => tr.findKnightTravelSolution)
+        .find(_.nonEmpty)
+        .flatten
     }
   }
 }
@@ -67,6 +74,6 @@ object Travel {
   /** Constructor like `Travel(Pos("D4"), Pos("E6"), Pos("F4")).` */
   final def apply(visited: Pos*) = new Travel(visited: _*)
 
-  var counter = 0l
-  var lastTS = System.nanoTime
+  val startTS = System.nanoTime
+  val counter = new AtomicInteger(0)
 }
