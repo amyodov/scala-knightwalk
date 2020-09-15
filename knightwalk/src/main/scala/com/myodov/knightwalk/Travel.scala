@@ -43,6 +43,8 @@ case class Travel(visited: ListSet[Pos]) {
       None
     } else {
       // Generate the next travels and depth-search them.
+      // We need to find only first solution; so it is LazyList
+      // (may not get evaluated fully) and in it we find just the first nonempty item.
       LazyList.from(nextTravels)
         .map(tr => tr.findKnightTravelSolution)
         .find(_.nonEmpty)
